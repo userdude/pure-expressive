@@ -155,7 +155,7 @@ namespace Input
 namespace Output
 {
     function stream($output): string {
-        return (json($output) ?? '').PHP_EOL;
+        return json($output) ?? '';
     }
     
     function json($output): ?string {
