@@ -18,6 +18,6 @@ if [ "${HAS_EXPRESS_WORKER}" == "" ]; then
          --name "${EXPRESS_WORKER_NAME}" \
          -v "${PWD}/app:/app" \
          -e PATH="${WORKER_PATH}:/app" \
-         php:cli \
+         php:8.0-cli \
          bash -c "while true; do sleep 1; done;"
 fi
