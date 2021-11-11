@@ -3,6 +3,42 @@
 
 declare(strict_types=1);
 
+namespace
+{
+    use App\Compat;
+    use App\Context;
+    use Domain\Error;
+    
+    use function Input\infer;
+    use function Output\panic;
+    use function Output\stream;
+    use function Service\path;
+    
+    defined('APP_PATH') ?: define('APP_PATH', dirname(__FILE__));
+    
+    (fn(string $service, ...$request) => (new class($service) extends Context {
+        use Compat;
+        
+        private $service;
+        
+        public function __construct(string $service) {
+            $this->service = $service;
+        }
+        
+        public function respond(...$request): void {
+            echo stream((function (...$payload) {
+                try {
+                    return $this->compute($this->service, ...infer(...$payload));
+                } catch (\Exception $error) {
+                    panic('Error!', $payload, $error);
+                }
+            })(...$request));
+            
+            exit;
+        }
+    })->respond(...$request))($argv[1], ...array_slice($argv, 2));
+}
+
 namespace Format
 {
     function pascal(string $input): string {
@@ -151,40 +187,4 @@ namespace App
             };
         }
     }
-}
-
-namespace
-{
-    use App\Compat;
-    use App\Context;
-    use Domain\Error;
-    
-    use function Input\infer;
-    use function Output\panic;
-    use function Output\stream;
-    use function Service\path;
-    
-    defined('APP_PATH') ?: define('APP_PATH', dirname(__FILE__));
-    
-    (fn(string $service, ...$request) => (new class($service) extends Context {
-        use Compat;
-    
-        private $service;
-    
-        public function __construct(string $service) {
-            $this->service = $service;
-        }
-    
-        public function respond(...$request): void {
-            echo stream((function (...$payload) {
-                try {
-                    return $this->compute($this->service, ...infer(...$payload));
-                } catch (\Exception $error) {
-                    panic('Error!', $payload, $error);
-                }
-            })(...$request));
-        
-            exit;
-        }
-    })->respond(...$request))($argv[1], ...array_slice($argv, 2));
 }
