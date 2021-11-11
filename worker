@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+EXPRESS_WORKER_NAME="express-worker"
+
+if [ "$1" == "restart" ]; then
+  docker kill "${EXPRESS_WORKER_NAME}"
+fi
+
+HAS_EXPRESS_WORKER="$(docker ps --format "table [[ {{.Names}} ]]" | grep express-worker)"
+
+if [ "${HAS_EXPRESS_WORKER}" == "" ]; then
+  docker rm "${EXPRESS_WORKER_NAME}"
+
+  WORKER_PATH=$(docker run php:cli bash -c 'echo "${PATH}"')
+
+  docker run \
+         -d -i \
+         --name "${EXPRESS_WORKER_NAME}" \
+         -v "${PWD}/app:/app" \
+         -e PATH="${WORKER_PATH}:/app" \
+         php:cli \
+         bash -c "while true; do sleep 1; done;"
+fi

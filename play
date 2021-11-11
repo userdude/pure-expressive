@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+./worker
+
+docker exec -it express-worker console "$@"
+
+echo ""
