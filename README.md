@@ -7,7 +7,9 @@ A simple but powerful module loader written for PHP.
 ## Getting Started
 
 ```shell
-git clone https://github.com/userdude/pure-expressive.git 
+git clone https://github.com/userdude/pure-expressive.git pure-expressive
+
+cd pure-expressive
 
 ./play make/service say/hello  
 ```
@@ -15,6 +17,10 @@ git clone https://github.com/userdude/pure-expressive.git
 Now you can edit the `app/say/hello.php` file and change the service `return`:
 
 ```php
+<?php // app/say/hello.php
+
+...
+
 return fn(string $name = null): string => 'Hello '.($name ?: 'world') '!';
 ```
 
