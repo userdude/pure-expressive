@@ -26,10 +26,10 @@ This basic, compat-level expressive only has one folder, and two more files:
 - `app/console`: Used to call service commands directly.
 - `app/make/service.php`: A simple make script.
 
-**Important!** A service name is always minus the app/ and .php. For instance,
-`app/make/service/php` would become `make/service`.
+**Important!** A service name is always minus the `app/` and `.php`. For instance,
+`app/make/service/php` would become `make/service`, as in `./play make/service ...`.
 
-Now let's create our first service. Painless:
+Now let's create our first service. For example, a `foo/bar` service:
 
 ```shell
 ./play make/service foo/bar
@@ -39,12 +39,12 @@ Running that in the console, you should receive something like:
 
 ```shell
 $ ./play make/service foo/bar
-Success! /app/foo/bar.php service file generated.
+Success! app/foo/bar.php service file generated.
 ```
 
-You should see that file now in your `app/foo` directory, which was also created.
+That file is now in your `app/foo` directory, which was also created.
 
-Opening the file, you should see this:
+Opening the `app/foo/bar.php` file, you should see this:
 
 ```php
 <?php
@@ -78,8 +78,8 @@ interface Bar {
 return fn() => 'Baz!!!';
 ```
 
-Returning a string from our service allows `app/console` to output the service's response
-directly to the command shell. 
+**Important!** Returning a string from our service allows `app/console` to output the service's response
+directly to the command line, in JSON format. 
 
 Now in a shell, run the following command:
 

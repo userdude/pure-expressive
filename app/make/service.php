@@ -37,7 +37,7 @@ return function() use(&$context) {
 '), ns($name, 1), pascal(basename($name)), $name);
         
         if (file_put_contents($path, $template)) {
-            return sprintf('Success! %s service file generated.', substr($path, 1));
+            return sprintf('Success! %s service file generated.', trim($path, '/'));
         }
         
         return 'Failed! Did not create %s!';
