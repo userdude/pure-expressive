@@ -1,0 +1,13 @@
+{
+    "license": "proprietary",
+    "require": {
+        "ext-json": "*",
+        "ext-intl": "*",
+        "ext-mysqli": "*"
+    },
+    "config": {
+        "platform":{
+            "php":"8.0"
+        }
+    }
+}

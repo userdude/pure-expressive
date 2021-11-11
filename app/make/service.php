@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Domain\Make;
+namespace Service\Make;
 
 use function Service\format;
 use function Service\ns;
