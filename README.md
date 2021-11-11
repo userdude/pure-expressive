@@ -27,7 +27,7 @@ Now you can edit the `app/say/hello.php` file and change the service `return`:
 
 ...
 
-return fn(string $name = null): string => 'Hello '.($name ?: 'world') '!';
+return fn(?string $name = null): string => sprintf('Hello %s!', $name ?: 'world');
 ```
 
 Now call it: 
