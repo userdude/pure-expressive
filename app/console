@@ -74,9 +74,7 @@ namespace App
         public function defer(string $delegate, ...$default): callable
         {
             return function(...$arguments) use($delegate, $default) {
-                return $this->compute($delegate, ...(
-                count($arguments) ? $arguments : $default
-                ));
+                return $this->compute($delegate, ...count($arguments) ? $arguments : $default);
             };
         }
     }
