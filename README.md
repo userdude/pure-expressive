@@ -6,6 +6,12 @@ A simple but powerful module loader written for PHP.
 
 ## Getting Started
 
+### Requirements
+
+- Docker: Required to use `./play` script (`app/console` will work with PHP 7.4 and above).
+
+### Installation
+
 ```shell
 git clone https://github.com/userdude/pure-expressive.git pure-expressive
 
@@ -54,7 +60,7 @@ First, let's look at our files.
 This basic, compat-level expressive only has one folder, and two more files:
 
 - `app/`: Directory with our service definitions.
-- `app/console`: Used to call service commands directly.
+- `app/console`: Used to call service commands directly from the command line.
 - `app/make/service.php`: A simple make script.
 
 **Important!** A service name is always minus the `app/` and `.php`. For instance,
@@ -126,24 +132,3 @@ Baz!!!
 ```
 
 You have now written your first Pure Expressive-style application!
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
