@@ -4,6 +4,31 @@ A simple but powerful module loader written for PHP.
 
 ---
 
+## Getting Started
+
+```shell
+git clone https://github.com/userdude/pure-expressive.git 
+
+./play make/service say/hello  
+```
+
+Now you can edit the `app/say/hello.php` file and change the service `return`:
+
+```php
+return fn(string $name = null): string => 'Hello '.($name ?: 'world') '!';
+```
+
+Now call it: 
+
+```shell
+$ ./play say/hello Jim
+Hello Jim!
+```
+
+---
+
+## About the Project
+
 This is the most basic version of the Pure Expressive project I've been working
 on for a while. The objective is to show as minimal as possible example of module
 loading using a more modern PHP syntax and controllable environment (container).
