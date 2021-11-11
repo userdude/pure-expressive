@@ -118,7 +118,9 @@ namespace Format
     }
     
     function snake(string $input): string {
-        return strtolower(preg_replace('/[^_a-z0-9]|_{2,}/i', '_', $input));
+        return trim(preg_replace('/_{1,}/', '_', preg_replace_callback('/([A-Z])/', static function($match) {
+            return '_'.strtolower($match[0]);
+        }, str_replace(['-', '/', ' '], '_', $input))), '_');
     }
 }
 
