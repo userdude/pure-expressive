@@ -39,6 +39,60 @@ namespace
     })->respond(...$request))($argv[1], ...array_slice($argv, 2));
 }
 
+namespace App
+{
+    use Domain\Error;
+    
+    use function Output\panic;
+    use function Service\path;
+    
+    trait Compat
+    {
+        protected function module(string $name): callable {
+            if (file_exists($path = path($name))) {
+                return require $path;
+            }
+            
+            panic('Module %s not found at %s!', [$name, $path]);
+        }
+    }
+    
+    abstract class Context
+    {
+        abstract protected function module(string $name): callable;
+        
+        public function service(string $name): callable
+        {
+            return $this->module($name);
+        }
+        
+        public function compute(string $delegate, ...$arguments)
+        {
+            return $this->service($delegate)(...$arguments);
+        }
+        
+        public function defer(string $delegate, ...$default): callable
+        {
+            return function(...$arguments) use($delegate, $default) {
+                return $this->compute($delegate, ...(
+                count($arguments) ? $arguments : $default
+                ));
+            };
+        }
+    }
+}
+
+namespace Domain
+{
+    class Error extends \DomainException
+    {
+        public function __construct(string $message, string ...$errors)
+        {
+            parent::__construct(sprintf($message, ...$errors));
+        }
+    }
+}
+
 namespace Format
 {
     function pascal(string $input): string {
@@ -80,17 +134,6 @@ namespace Service
     
     function format(string $method, string $path): string {
         return implode('/', array_map(fn($part) => $method($part), explode('/', $path)));
-    }
-}
-
-namespace Domain
-{
-    class Error extends \DomainException
-    {
-        public function __construct(string $message, string ...$errors)
-        {
-            parent::__construct(sprintf($message, ...$errors));
-        }
     }
 }
 
@@ -143,48 +186,5 @@ namespace Output
         }
         
         exit(1);
-    }
-}
-
-namespace App
-{
-    use Domain\Error;
-    
-    use function Output\panic;
-    use function Service\path;
-    
-    trait Compat
-    {
-        protected function module(string $name): callable {
-            if (file_exists($path = path($name))) {
-                return require $path;
-            }
-        
-            panic('Module %s not found at %s!', [$name, $path]);
-        }
-    }
-    
-    abstract class Context
-    {
-        abstract protected function module(string $name): callable;
-    
-        public function service(string $name): callable
-        {
-            return $this->module($name);
-        }
-        
-        public function compute(string $delegate, ...$arguments)
-        {
-            return $this->service($delegate)(...$arguments);
-        }
-        
-        public function defer(string $delegate, ...$default): callable
-        {
-            return function(...$arguments) use($delegate, $default) {
-                return $this->compute($delegate, ...(
-                    count($arguments) ? $arguments : $default
-                ));
-            };
-        }
     }
 }
