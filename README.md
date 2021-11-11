@@ -17,7 +17,7 @@ that easy. `:D`
 First, let's look at our files.
 
 - `play`: Calls a console service against the `app/console` php script.
-- `worker`: This command starts a worker session that `play` uses to run the service 
+- `play-worker`: This command starts a worker session that `play` uses to run the service 
    request. This provides a consistent PHP version (8.0 as of now).
 
 This basic, compat-level expressive only has one folder, and two more files:
@@ -26,8 +26,8 @@ This basic, compat-level expressive only has one folder, and two more files:
 - `app/console`: Used to call service commands directly.
 - `app/make/service.php`: A simple make script.
 
-> **Important!** A service name is always minus the app/ and .php. For instance, 
-> `app/make/service/php` would be become `make/service`.
+**Important!** A service name is always minus the app/ and .php. For instance,
+`app/make/service/php` would become `make/service`.
 
 Now let's create our first service. Painless:
 
@@ -78,10 +78,8 @@ interface Bar {
 return fn() => 'Baz!!!';
 ```
 
-> **Note!** The `app/console` JSON encodes any service response.
-
-Returning a string from our service allows us to output the service's response
-directly to the shell. 
+Returning a string from our service allows `app/console` to output the service's response
+directly to the command shell. 
 
 Now in a shell, run the following command:
 
@@ -96,7 +94,7 @@ $ ./play foo/bar
 Baz!!!
 ```
 
-
+You have now written your first Pure Expressive-style application!
 
 
 

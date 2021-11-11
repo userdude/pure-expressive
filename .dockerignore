@@ -3,4 +3,3 @@
 .gitignore
 docker-compose.*
 README.md
-db-data/
