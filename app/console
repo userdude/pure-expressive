@@ -114,26 +114,27 @@ namespace App
 {
     use Domain\Error;
     
+    use function Output\panic;
+    use function Service\path;
+    
+    trait Compat
+    {
+        protected function module(string $name): callable {
+            if (file_exists($path = path($name))) {
+                return require $path;
+            }
+        
+            panic('Module %s not found at %s!', [$name, $path]);
+        }
+    }
+    
     abstract class Context
     {
-        public function __construct()
-        {
-            if (!defined('APP_PATH')) {
-                throw new Error('Missing required APP_PATH.');
-            }
-            
-            if (!defined('APP_CONTEXT')) {
-                throw new Error('Missing required APP_CONTEXT.');
-            }
-        }
-        
+        abstract protected function module(string $name): callable;
+    
         public function service(string $name): callable
         {
-            if (function_exists('\module')) {
-                return \module($this, $name);
-            }
-            
-            throw new Error('Missing \method().', $name);
+            return $this->module($name);
         }
         
         public function compute(string $delegate, ...$arguments)
@@ -154,6 +155,7 @@ namespace App
 
 namespace
 {
+    use App\Compat;
     use App\Context;
     use Domain\Error;
     
@@ -162,36 +164,27 @@ namespace
     use function Output\stream;
     use function Service\path;
     
-    function module(Context $context, string $name): callable {
-        if (file_exists($path = path($name))) {
-            return require $path;
-        }
-        
-        panic('Module %s not found!', [$name], new Error('Missing %s module.', $name));
-    }
-    
     defined('APP_PATH') ?: define('APP_PATH', dirname(__FILE__));
-    defined('APP_CONTEXT') ?: define('APP_CONTEXT', $argv[0]);
     
-    (fn(string $request, ...$body) => (new class($request) extends Context {
-        private $request;
+    (fn(string $service, ...$request) => (new class($service) extends Context {
+        use Compat;
     
-        public function __construct(string $request) {
-            parent::__construct();
-        
-            $this->request = $request;
+        private $service;
+    
+        public function __construct(string $service) {
+            $this->service = $service;
         }
     
-        public function respond(...$message): void {
+        public function respond(...$request): void {
             echo stream((function (...$payload) {
                 try {
-                    return $this->compute($this->request, ...infer(...$payload));
+                    return $this->compute($this->service, ...infer(...$payload));
                 } catch (\Exception $error) {
-                    return panic('Error!', $payload, $error);
+                    panic('Error!', $payload, $error);
                 }
-            })(...$message));
+            })(...$request));
         
             exit;
         }
-    })->respond(...$body))($argv[1], ...array_slice($argv, 2));
+    })->respond(...$request))($argv[1], ...array_slice($argv, 2));
 }

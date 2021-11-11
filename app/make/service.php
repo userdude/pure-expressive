@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Service\Make;
 
-use function Service\format;
 use function Service\ns;
 use function Service\path;
 use function Format\pascal;
