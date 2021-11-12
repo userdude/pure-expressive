@@ -28,6 +28,10 @@ declare(strict_types=1);
 
 namespace %s;
 
+use App\Context;
+
+/** @var Context $context */
+
 interface %s {
     public function __invoke();
 }
