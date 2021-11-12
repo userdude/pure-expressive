@@ -3,26 +3,89 @@
 
 declare(strict_types=1);
 
-namespace Format
+namespace
 {
-    function pascal(string $input): string {
-        return str_replace(' ', '', words($input));
+    use App\Context;
+    use Domain\Error;
+    
+    use function Input\infer;
+    use function Output\panic;
+    use function Output\stream;
+    use function Service\path;
+    
+    function module(Context $context, string $name): callable {
+        if (file_exists($path = path($name))) {
+            return require $path;
+        }
+        
+        panic('Module %s not found!', [$name], new Error('Missing %s module.', $name));
     }
     
-    function camel(string $name): string {
-        return lcfirst(pascal($name));
-    }
+    defined('APP_PATH') ?: define('APP_PATH', dirname(__FILE__));
+    defined('APP_CONTEXT') ?: define('APP_CONTEXT', $argv[0]);
     
-    function sausage(string $input): string {
-        return str_replace('_', '-', snake($input));
-    }
+    (fn(string $request, ...$body) => (new class($request) extends Context {
+        private $request;
+        
+        public function __construct(string $request) {
+            parent::__construct();
+            
+            $this->request = $request;
+        }
+        
+        public function respond(...$message): void {
+            echo stream((function (...$payload) {
+                try {
+                    return $this->compute($this->request, ...infer(...$payload));
+                } catch (\Exception $error) {
+                    return panic('Error!', $payload, $error);
+                }
+            })(...$message));
+            
+            exit;
+        }
+    })->respond(...$body))($argv[1], ...array_slice($argv, 2));
+}
+
+namespace App
+{
+    use Domain\Error;
     
-    function words(string $input): string {
-        return ucwords(str_replace('_', ' ', snake($input)));
-    }
-    
-    function snake(string $input): string {
-        return strtolower(preg_replace('/[^_a-z0-9]|_{2,}/i', '_', $input));
+    abstract class Context
+    {
+        public function __construct()
+        {
+            if (!defined('APP_PATH')) {
+                throw new Error('Missing required APP_PATH.');
+            }
+            
+            if (!defined('APP_CONTEXT')) {
+                throw new Error('Missing required APP_CONTEXT.');
+            }
+        }
+        
+        public function service(string $name): callable
+        {
+            if (function_exists('\module')) {
+                return \module($this, $name);
+            }
+            
+            throw new Error('Missing \method().', $name);
+        }
+        
+        public function compute(string $delegate, ...$arguments)
+        {
+            return $this->service($delegate)(...$arguments);
+        }
+        
+        public function defer(string $delegate, ...$default): callable
+        {
+            return function(...$arguments) use($delegate, $default) {
+                return $this->compute($delegate, ...(
+                count($arguments) ? $arguments : $default
+                ));
+            };
+        }
     }
 }
 
@@ -44,6 +107,29 @@ namespace Service
     
     function format(string $method, string $path): string {
         return implode('/', array_map(fn($part) => $method($part), explode('/', $path)));
+    }
+}
+
+namespace Format
+{
+    function pascal(string $input): string {
+        return str_replace(' ', '', words($input));
+    }
+    
+    function camel(string $name): string {
+        return lcfirst(pascal($name));
+    }
+    
+    function sausage(string $input): string {
+        return str_replace('_', '-', snake($input));
+    }
+    
+    function words(string $input): string {
+        return ucwords(str_replace('_', ' ', snake($input)));
+    }
+    
+    function snake(string $input): string {
+        return strtolower(preg_replace('/[^_a-z0-9]|_{2,}/i', '_', $input));
     }
 }
 
@@ -108,90 +194,4 @@ namespace Output
         
         exit(1);
     }
-}
-
-namespace App
-{
-    use Domain\Error;
-    
-    abstract class Context
-    {
-        public function __construct()
-        {
-            if (!defined('APP_PATH')) {
-                throw new Error('Missing required APP_PATH.');
-            }
-            
-            if (!defined('APP_CONTEXT')) {
-                throw new Error('Missing required APP_CONTEXT.');
-            }
-        }
-        
-        public function service(string $name): callable
-        {
-            if (function_exists('\module')) {
-                return \module($this, $name);
-            }
-            
-            throw new Error('Missing \method().', $name);
-        }
-        
-        public function compute(string $delegate, ...$arguments)
-        {
-            return $this->service($delegate)(...$arguments);
-        }
-        
-        public function defer(string $delegate, ...$default): callable
-        {
-            return function(...$arguments) use($delegate, $default) {
-                return $this->compute($delegate, ...(
-                    count($arguments) ? $arguments : $default
-                ));
-            };
-        }
-    }
-}
-
-namespace
-{
-    use App\Context;
-    use Domain\Error;
-    
-    use function Input\infer;
-    use function Output\panic;
-    use function Output\stream;
-    use function Service\path;
-    
-    function module(Context $context, string $name): callable {
-        if (file_exists($path = path($name))) {
-            return require $path;
-        }
-        
-        panic('Module %s not found!', [$name], new Error('Missing %s module.', $name));
-    }
-    
-    defined('APP_PATH') ?: define('APP_PATH', dirname(__FILE__));
-    defined('APP_CONTEXT') ?: define('APP_CONTEXT', $argv[0]);
-    
-    (fn(string $request, ...$body) => (new class($request) extends Context {
-        private $request;
-    
-        public function __construct(string $request) {
-            parent::__construct();
-        
-            $this->request = $request;
-        }
-    
-        public function respond(...$message): void {
-            echo stream((function (...$payload) {
-                try {
-                    return $this->compute($this->request, ...infer(...$payload));
-                } catch (\Exception $error) {
-                    return panic('Error!', $payload, $error);
-                }
-            })(...$message));
-        
-            exit;
-        }
-    })->respond(...$body))($argv[1], ...array_slice($argv, 2));
 }
