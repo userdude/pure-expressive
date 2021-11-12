@@ -82,9 +82,9 @@ namespace Service
     }
     
     function ns(string $path, int $offset = 0): string {
-        return trim(str_replace('/', '\\',
-            dirname(format('format\pascal', sf('App\/\%s', $path)), $offset)
-        ), '\\');
+        return sf('App\%s', trim(str_replace('/', '\\',
+            dirname(format('format\pascal', $path), $offset)
+        ), '\\'));
     }
     
     function format(string $method, string $path): string {
@@ -99,7 +99,7 @@ namespace Format
     }
     
     function pascal(string $input): string {
-        return str_replace(' ', '', words($input));
+        return str_replace(' ', '', ucwords($input));
     }
     
     function camel(string $name): string {
