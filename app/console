@@ -40,10 +40,10 @@ namespace App
     use function Output\panic;
     use function Service\path;
     
-    function module(string $name): callable {
+    function module(Context $context, string $name): callable {
         if (file_exists($path = path($name))) {
             return require $path;
-        }
+        };
         
         panic('Module %s not found at %s!', [$name, $path]);
     }
@@ -52,7 +52,7 @@ namespace App
     {
         public function service(string $name): callable
         {
-            return module($name);
+            return module($this, $name);
         }
         
         public function compute(string $delegate, ...$arguments)
@@ -63,7 +63,7 @@ namespace App
         public function defer(string $delegate, ...$default): callable
         {
             return function(...$arguments) use($delegate, $default) {
-                return $this->compute($delegate, ...count($arguments) ? $arguments : $default);
+                return $this->compute($delegate, ...$arguments ?: $default);
             };
         }
     }
