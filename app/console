@@ -94,8 +94,6 @@ namespace Service
 
 namespace Format
 {
-    use function Format\sf;
-    
     function sf(string $template, ...$properties): string {
         return sprintf($template, ...$properties);
     }
