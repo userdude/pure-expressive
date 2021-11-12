@@ -40,7 +40,7 @@ namespace App
     use function Output\panic;
     use function Service\path;
     
-    function module(string $name): callable {
+    function module(string $name, Context $context): callable {
         if (file_exists($path = path($name))) {
             return require $path;
         };
