@@ -23,13 +23,19 @@ return function(string $name): string {
         
         $template = sf(trim('
 <?php
+
 declare(strict_types=1);
+
 namespace %s;
+
 use App\Context;
+
 /** @var Context $context */
+
 interface %s {
     public function __invoke();
 }
+
 return function() use(&$context) {
     // TODO: Make %s happen.
 };
