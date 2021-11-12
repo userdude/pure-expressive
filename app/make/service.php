@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Service\Make;
 
+use function Format\sf;
+use function Format\pascal;
 use function Service\ns;
 use function Service\path;
-use function Format\pascal;
-
-use function Format\sf;
 
 interface Service {
     public function __invoke(string $name): string;
@@ -29,6 +28,10 @@ declare(strict_types=1);
 
 namespace %s;
 
+use App\Context;
+
+/** @var Context $context */
+
 interface %s {
     public function __invoke();
 }
@@ -42,7 +45,7 @@ return function() use(&$context) {
             return sf('Success! %s service file generated.', trim($path, '/'));
         }
         
-        return 'Failed! Did not create %s!';
+        return sf('Failed! Did not create %s!', $name);
     }
     
     return sf('Service %s already exists.', $name);
