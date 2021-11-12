@@ -1,9 +1,7 @@
 {
-    "license": "proprietary",
+    "license": "MIT",
     "require": {
-        "ext-json": "*",
-        "ext-intl": "*",
-        "ext-mysqli": "*"
+        "ext-json": "*"
     },
     "config": {
         "platform":{
