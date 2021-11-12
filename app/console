@@ -6,7 +6,6 @@ declare(strict_types=1);
 namespace
 {
     use App\Context;
-    use Domain\Error;
     
     use function Input\infer;
     use function Output\panic;
@@ -64,7 +63,7 @@ namespace App
         public function defer(string $delegate, ...$default): callable
         {
             return function(...$arguments) use($delegate, $default) {
-                return $this->compute($delegate, ...count($arguments) ? $arguments : $default);
+                return $this->compute($delegate, ...$arguments ?: $default);
             };
         }
     }
@@ -72,8 +71,10 @@ namespace App
 
 namespace Service
 {
+    use function Format\sf;
+    
     function path(string $name): string {
-        return sprintf('%s/%s.php', APP_PATH, format('format\sausage', $name));
+        return sf('%s/%s.php', APP_PATH, format('format\sausage', $name));
     }
     
     function name(string $path): string {
@@ -82,7 +83,7 @@ namespace Service
     
     function ns(string $path, int $offset = 0): string {
         return trim(str_replace('/', '\\',
-            dirname(format('format\pascal', sprintf('App\/\%s', $path)), $offset)
+            dirname(format('format\pascal', sf('App\/\%s', $path)), $offset)
         ), '\\');
     }
     
@@ -93,6 +94,12 @@ namespace Service
 
 namespace Format
 {
+    use function Format\sf;
+    
+    function sf(string $template, ...$properties): string {
+        return sprintf($template, ...$properties);
+    }
+    
     function pascal(string $input): string {
         return str_replace(' ', '', words($input));
     }
@@ -140,8 +147,8 @@ namespace Output
     }
     
     function json($output): ?string {
-        $input = stripslashes(json_encode($output, JSON_PRETTY_PRINT) ?: null);
-    
+        $input = json_encode($output, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: null;
+        
         if ($input
             && strpos($input, '"') === 0
             && strrpos($input, '"') + 1 === strlen($input)) {
