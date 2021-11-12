@@ -82,9 +82,9 @@ namespace Service
     }
     
     function ns(string $path, int $offset = 0): string {
-        return sf('App\%s', trim(str_replace('/', '\\',
+        return trim(str_replace('/', '\\',
             dirname(format('format\pascal', $path), $offset)
-        ), '\\'));
+        ), '\\');
     }
     
     function format(string $method, string $path): string {
