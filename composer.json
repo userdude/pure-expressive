@@ -1,0 +1,11 @@
+{
+    "license": "MIT",
+    "require": {
+        "ext-json": "*"
+    },
+    "config": {
+        "platform":{
+            "php":"8.0"
+        }
+    }
+}
