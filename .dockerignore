@@ -1,5 +1,0 @@
-.dockerignore
-.git
-.gitignore
-docker-compose.*
-README.md
