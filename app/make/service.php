@@ -36,7 +36,7 @@ interface %s {
 return function() use(&$context) {
     // TODO: Make %s happen.
 };
-'), ns($name, 1), pascal(basename($name)), $name);
+'), ns(sf('app/%s', $name), 1), pascal(basename($name)), $name);
         
         if (file_put_contents($path, $template)) {
             return sf('Success! %s service file generated.', substr($path, 1));
