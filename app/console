@@ -6,71 +6,53 @@ declare(strict_types=1);
 namespace
 {
     use App\Context;
-    use Domain\Error;
     
     use function Input\infer;
     use function Output\panic;
     use function Output\stream;
     use function Service\path;
     
-    function module(Context $context, string $name): callable {
-        if (file_exists($path = path($name))) {
-            return require $path;
-        }
-        
-        panic('Module %s not found!', [$name], new Error('Missing %s module.', $name));
-    }
-    
     defined('APP_PATH') ?: define('APP_PATH', dirname(__FILE__));
-    defined('APP_CONTEXT') ?: define('APP_CONTEXT', $argv[0]);
     
-    (fn(string $request, ...$body) => (new class($request) extends Context {
-        private $request;
+    (fn(string $service, ...$request) => (new class($service) extends Context {
+        private $service;
         
-        public function __construct(string $request) {
-            parent::__construct();
-            
-            $this->request = $request;
+        public function __construct(string $service) {
+            $this->service = $service;
         }
         
-        public function respond(...$message): void {
+        public function respond(...$request): void {
             echo stream((function (...$payload) {
                 try {
-                    return $this->compute($this->request, ...infer(...$payload));
+                    return $this->compute($this->service, ...infer(...$payload));
                 } catch (\Exception $error) {
-                    return panic('Error!', $payload, $error);
+                    panic('Error!', $payload, $error);
                 }
-            })(...$message));
+            })(...$request));
             
             exit;
         }
-    })->respond(...$body))($argv[1], ...array_slice($argv, 2));
+    })->respond(...$request))($argv[1], ...array_slice($argv, 2));
 }
 
 namespace App
 {
-    use Domain\Error;
+    use function Output\panic;
+    use function Service\path;
+    
+    function module(string $name): callable {
+        if (file_exists($path = path($name))) {
+            return require $path;
+        };
+        
+        panic('Module %s not found at %s!', [$name, $path]);
+    }
     
     abstract class Context
     {
-        public function __construct()
-        {
-            if (!defined('APP_PATH')) {
-                throw new Error('Missing required APP_PATH.');
-            }
-            
-            if (!defined('APP_CONTEXT')) {
-                throw new Error('Missing required APP_CONTEXT.');
-            }
-        }
-        
         public function service(string $name): callable
         {
-            if (function_exists('\module')) {
-                return \module($this, $name);
-            }
-            
-            throw new Error('Missing \method().', $name);
+            return module($name);
         }
         
         public function compute(string $delegate, ...$arguments)
@@ -81,9 +63,7 @@ namespace App
         public function defer(string $delegate, ...$default): callable
         {
             return function(...$arguments) use($delegate, $default) {
-                return $this->compute($delegate, ...(
-                count($arguments) ? $arguments : $default
-                ));
+                return $this->compute($delegate, ...$arguments ?: $default);
             };
         }
     }
@@ -91,8 +71,10 @@ namespace App
 
 namespace Service
 {
+    use function Format\sf;
+    
     function path(string $name): string {
-        return sprintf('%s/%s.php', APP_PATH, format('format\sausage', $name));
+        return sf('%s/%s.php', APP_PATH, format('format\sausage', $name));
     }
     
     function name(string $path): string {
@@ -101,7 +83,7 @@ namespace Service
     
     function ns(string $path, int $offset = 0): string {
         return trim(str_replace('/', '\\',
-            dirname(format('format\pascal', sprintf('App\/\%s', $path)), $offset)
+            dirname(format('format\pascal', sf('App\/\%s', $path)), $offset)
         ), '\\');
     }
     
@@ -112,6 +94,10 @@ namespace Service
 
 namespace Format
 {
+    function sf(string $template, ...$properties): string {
+        return sprintf($template, ...$properties);
+    }
+    
     function pascal(string $input): string {
         return str_replace(' ', '', words($input));
     }
@@ -129,18 +115,9 @@ namespace Format
     }
     
     function snake(string $input): string {
-        return strtolower(preg_replace('/[^_a-z0-9]|_{2,}/i', '_', $input));
-    }
-}
-
-namespace Domain
-{
-    class Error extends \DomainException
-    {
-        public function __construct(string $message, string ...$errors)
-        {
-            parent::__construct(sprintf($message, ...$errors));
-        }
+        return trim(preg_replace('/_{1,}/', '_', preg_replace_callback('/([A-Z])/', static function($match) {
+            return '_'.strtolower($match[0]);
+        }, str_replace(['-', '/', ' '], '_', $input))), '_');
     }
 }
 
@@ -163,12 +140,14 @@ namespace Input
 
 namespace Output
 {
+    use function Format\sf;
+    
     function stream($output): string {
-        return (json($output) ?? '').PHP_EOL;
+        return (json($output) ?? '');
     }
     
     function json($output): ?string {
-        $input = stripslashes(json_encode($output, JSON_PRETTY_PRINT) ?: null);
+        $input = json_encode($output, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: null;
     
         if ($input
             && strpos($input, '"') === 0
@@ -180,7 +159,7 @@ namespace Output
     }
     
     function panic(string $message, array $notes = [], ?\Exception $exception = null): void {
-        echo stream(sprintf($message, ...$notes));
+        echo stream(sf($message, ...$notes));
         
         if ($exception) {
             echo stream((object) [
