@@ -2,7 +2,9 @@
 
 EXPRESS_WORKER_NAME="play-worker"
 
-if [ "$1" == "restart" ]; then
+HAS_EXPRESS_WORKER="$(docker ps --format "table [[ {{.Names}} ]]" | grep play-worker)"
+
+if [ "$1" == "restart" ] && [ "${HAS_EXPRESS_WORKER}" != "" ]; then
   docker kill "${EXPRESS_WORKER_NAME}"
 fi
 
