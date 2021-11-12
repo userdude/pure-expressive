@@ -99,7 +99,7 @@ namespace Format
     }
     
     function pascal(string $input): string {
-        return str_replace(' ', '', ucwords($input));
+        return str_replace(' ', '', words(snake($input)));
     }
     
     function camel(string $name): string {
