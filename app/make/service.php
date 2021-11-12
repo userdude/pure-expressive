@@ -8,6 +8,8 @@ use function Service\ns;
 use function Service\path;
 use function Format\pascal;
 
+use function Format\sf;
+
 interface Service {
     public function __invoke(string $name): string;
 }
@@ -20,7 +22,7 @@ return function(string $name): string {
             mkdir($directory, 0777, true);
         }
         
-        $template = sprintf(trim('
+        $template = sf(trim('
 <?php
 
 declare(strict_types=1);
@@ -37,11 +39,11 @@ return function() use(&$context) {
 '), ns($name, 1), pascal(basename($name)), $name);
         
         if (file_put_contents($path, $template)) {
-            return sprintf('Success! %s service file generated.', trim($path, '/'));
+            return sf('Success! %s service file generated.', trim($path, '/'));
         }
         
         return 'Failed! Did not create %s!';
     }
     
-    return sprintf('Service %s already exists.', $name);
+    return sf('Service %s already exists.', $name);
 };
