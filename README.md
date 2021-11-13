@@ -8,7 +8,7 @@ A simple but powerful module loader written for PHP.
 
 ### Requirements
 
-- Docker: Required to use `./play` script (`app/console` will work with PHP 7.4 and above).
+- Docker: Required to use `./play` script (`app/console` will work with PHP 8.0).
 
 ### Installation
 
