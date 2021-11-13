@@ -11,18 +11,7 @@ use function Service\path;
 use function Service\ns;
 
 interface Service {
-    public function __invoke(string $name): string;
-}
-
-return function(string $name): string {
-    if (!file_exists($path = path($name))) {
-        $directory = dirname($path);
-        
-        if (!is_dir($directory)) {
-            mkdir($directory, 0777, true);
-        }
-        
-        $template = '
+    public const TEMPLATE = '
 <?php
 
 declare(strict_types=1);
@@ -30,24 +19,52 @@ declare(strict_types=1);
 namespace {{ namespace }};
 
 use App\Context;
-
+{{ use }}
 /** @var Context $context */
-
+{{ functions }}
 interface {{ interface }} {
     // TODO: Synchronize service definition arguments with __invoke()
-    public function __invoke();
+    public function __invoke({{ arguments }});
 }
-
-return function() use(&$context) {
+{{ services }}
+return {{ definition }}
+';
+    
+    public const FULL_DEFINITION = '
+function() use(&$context) {
     // TODO: Implement {{ name }} service
     \Service\implement(\'{{ name }}\');
 };
 ';
+    
+    public const SHORT_DEFINITION = '
+fn({{ arguments }}) => \Service\implement(\'{{ name }}\'); // TODO: Implement {{ name }} service
+';
+    
+    public function __invoke(string $name): string;
+}
+
+return function(string $name, bool $useFullDefinition = true): string {
+    if (!file_exists($path = path($name))) {
+        $directory = dirname($path);
         
-        $rendered = template($template, [
+        if (!is_dir($directory)) {
+            mkdir($directory, 0777, true);
+        }
+        
+        $definition = trim($useFullDefinition ? Service::FULL_DEFINITION : Service::SHORT_DEFINITION);
+        
+        $rendered = template(Service::TEMPLATE, [
             'namespace' => ns(sf('app/%s', $name), 1),
+            'use' => '',
+            'functions' => '',
             'interface' => pascal(basename($name)),
-            'name' => $name,
+            'arguments' => '',
+            'services' => '',
+            'definition' => template($definition, [
+                'arguments' => '',
+                'name' => $name,
+            ]),
         ]);
         
         if (file_put_contents($path, trim($rendered).PHP_EOL)) {
