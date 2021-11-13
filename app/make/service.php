@@ -41,7 +41,7 @@ function() use(&$context) {
 fn({{ arguments }}) => \Service\implement(\'{{ name }}\'); // TODO: Implement {{ name }} service
 ';
     
-    public function __invoke(string $name): string;
+    public function __invoke(string $name, bool $useFullDefinition = true): string;
 }
 
 return function(string $name, bool $useFullDefinition = true): string {
