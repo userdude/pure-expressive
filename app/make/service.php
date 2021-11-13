@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Service\Make;
 
+use http\Exception\RuntimeException;
 use function Format\pascal;
 use function Format\sf;
 use function Format\template;
@@ -54,8 +55,8 @@ return function() use(&$context) {
             return sf('Success! %s service file generated.', trim($path, '/'));
         }
         
-        return sf('Failed! Did not create %s!', $name);
+        throw new \DomainException(sf('Failed! Did not create service %s file at %s!', $name, trim($path, '/')));
     }
     
-    return sf('Service %s already exists.', $name);
+    throw new \RuntimeException(sf('Service %s already exists at path %s.', $name, trim($path, '/')));
 };
