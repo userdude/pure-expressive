@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Service\Make;
 
-use http\Exception\RuntimeException;
 use function Format\pascal;
 use function Format\sf;
 use function Format\template;
