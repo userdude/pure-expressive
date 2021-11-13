@@ -54,7 +54,7 @@ return function() use(&$context) {
             return sf('Success! %s service file generated.', trim($path, '/'));
         }
         
-        throw new \DomainException(sf('Failed! Did not create service %s file at %s!', $name, trim($path, '/')));
+        throw new \RuntimeException(sf('Failed! Did not create service %s file at %s!', $name, trim($path, '/')));
     }
     
     throw new \RuntimeException(sf('Service %s already exists at path %s.', $name, trim($path, '/')));
