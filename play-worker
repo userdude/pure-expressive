@@ -1,8 +1,19 @@
 #!/usr/bin/env bash
 
-EXPRESS_WORKER_NAME="play-worker"
+PHP_CLI_IMAGE="php:8.0-cli"
+
+CONTAINER_PREFIX="$(basename "$(cd .. && pwd)")-$(basename "$(pwd)")"
+EXPRESS_WORKER_NAME="${CONTAINER_PREFIX}_play-worker"
 
 HAS_EXPRESS_WORKER="$(docker ps --format "table [[ {{.Names}} ]]" | grep play-worker)"
+
+if [ "$1" == "stop" ]; then
+  if [ "${HAS_EXPRESS_WORKER}" != "" ]; then
+    docker kill "${EXPRESS_WORKER_NAME}"
+  fi
+
+  exit
+fi
 
 if [ "$1" == "restart" ] && [ "${HAS_EXPRESS_WORKER}" != "" ]; then
   docker kill "${EXPRESS_WORKER_NAME}"
@@ -13,13 +24,13 @@ HAS_EXPRESS_WORKER="$(docker ps --format "table [[ {{.Names}} ]]" | grep play-wo
 if [ "${HAS_EXPRESS_WORKER}" == "" ]; then
   docker rm "${EXPRESS_WORKER_NAME}"
 
-  WORKER_PATH=$(docker run php:cli bash -c 'echo "${PATH}"')
+  PLAY_WORKER_PATH=$(docker run "${PHP_CLI_IMAGE}" bash -c 'echo "${PATH}"')
 
   docker run \
          -d -i \
          --name "${EXPRESS_WORKER_NAME}" \
          -v "${PWD}/app:/app" \
-         -e PATH="${WORKER_PATH}:/app" \
-         php:8.0-cli \
+         -e PATH="${PLAY_WORKER_PATH}:/app" \
+         "${PHP_CLI_IMAGE}" \
          bash -c "while true; do sleep 1; done;"
 fi
