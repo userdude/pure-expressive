@@ -26,7 +26,7 @@ namespace
                 try {
                     return $this->compute($this->service, ...infer(...$payload));
                 } catch (\Exception $error) {
-                    panic('Error!', $payload, $error);
+                    panic('%s error!', [$error::class], $error);
                 }
             })(...$request));
             
@@ -78,7 +78,7 @@ namespace Service
     }
     
     function name(string $path): string {
-        return format('format\sausage', str_replace([APP_PATH, '.php'], '', $path));
+        return trim(format('format\sausage', str_replace([APP_PATH, '.php'], '', $path)), '/');
     }
     
     function ns(string $path, int $offset = 0): string {
@@ -90,12 +90,26 @@ namespace Service
     function format(string $method, string $path): string {
         return implode('/', array_map(fn($part) => $method($part), explode('/', $path)));
     }
+    
+    function implement(string $name): void {
+        throw new Todo(sf('TODO: Service \'%s\' is not implemented.', $name, path($name)));
+    }
+    
+    class Todo extends \RuntimeException {}
 }
 
 namespace Format
 {
     function sf(string $template, ...$properties): string {
         return sprintf($template, ...$properties);
+    }
+    
+    function template(string $body, array $properties): string {
+        return str_replace(
+            array_map(fn(string $var): string => sf('{{ %s }}', $var), array_keys($properties)),
+            array_values($properties),
+            $body
+        );
     }
     
     function pascal(string $input): string {
@@ -157,7 +171,7 @@ namespace Output
     }
     
     function panic(string $message, array $notes = [], ?\Exception $exception = null): void {
-        echo stream(sprintf($message, ...$notes));
+        echo stream(sprintf($message, ...$notes)).PHP_EOL;
         
         if ($exception) {
             echo stream((object) [
