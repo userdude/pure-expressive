@@ -7,7 +7,9 @@ namespace
 {
     use App\Context;
     
+    use function Format\sf;
     use function Input\infer;
+    use function Output\json;
     use function Output\panic;
     use function Output\stream;
     use function Service\path;
@@ -16,29 +18,61 @@ namespace
     
     (fn(string $service, ...$request) => (new class($service) extends Context {
         private $service;
-        
+    
         public function __construct(string $service) {
             $this->service = $service;
         }
         
         public function respond(...$request): void {
-            echo stream((function (...$payload) {
+            stream((function (...$payload) {
                 try {
-                    return $this->compute($this->service, ...infer(...$payload));
+                    return $this->compute($this->service, ...infer($payload));
                 } catch (\Exception $error) {
-                    panic('%s error!', [$error::class], $error);
+                    panic($error->getMessage(), [], $error);
                 }
             })(...$request));
             
             exit;
         }
     })->respond(...$request))($argv[1], ...array_slice($argv, 2));
+    
+    function export(...$items): void {
+        echo var_export($items, true).PHP_EOL;
+    }
+    
+    function lump(string $name, ...$items): void {
+        echo sf('"%s": %s%s', $name, json($items), PHP_EOL);
+    }
+    
+    function debug(...$items) {
+        dump(...$items);
+        
+        return array_slice($items, -1)[0] ?? [];
+    }
+    
+    function dump(...$items): void {
+        stream(...$items).PHP_EOL;
+    }
+    
+    function dd(...$items): void {
+        dump(...$items);
+        
+        exit;
+    }
 }
 
 namespace App
 {
+    use function Format\sf;
+    use function Format\template;
+    use function Format\unquote;
+    use function Input\infer;
     use function Output\panic;
     use function Service\path;
+    
+    function property(string $name, $default = null) {
+        return array_key_exists($name, $_ENV) ? infer(unquote($_ENV[$name] ?? '')) : $default;
+    }
     
     function module(Context $context, string $name): callable {
         if (file_exists($path = path($name))) {
@@ -46,6 +80,15 @@ namespace App
         };
         
         panic('Module %s not found at %s!', [$name, $path]);
+    }
+    
+    interface Migration
+    {
+        public function version(): int;
+    
+        public function forward();
+        
+        public function backward();
     }
     
     abstract class Context
@@ -104,6 +147,16 @@ namespace Format
         return sprintf($template, ...$properties);
     }
     
+    function unquote(string $subject): string {
+        return substr($subject, 0, 1).substr($subject, -1) === '""'
+            ? substr($subject, 1, -1)
+            : $subject;
+    }
+    
+    function wrap(string $subject, string $wrap = PHP_EOL) {
+        return $subject ? sf('%s%s%s', $wrap, $subject, $wrap) : '';
+    }
+    
     function template(string $body, array $properties): string {
         return str_replace(
             array_map(fn(string $var): string => sf('{{ %s }}', $var), array_keys($properties)),
@@ -137,44 +190,58 @@ namespace Format
 
 namespace Input
 {
-    function infer(...$arguments): array {
-        foreach ($arguments as &$argument) {
-            if (is_string($argument)) {
-                $decoded = json_decode($argument);
+    use function Output\json;
     
-                if (!json_last_error()) {
-                    $argument = $decoded;
+    /**
+     * Give possible JSON-formatted string and attempt to decode.
+     *
+     * @param string | array $items A possible string or array of strings to try.
+     * @return mixed
+     */
+    function infer($items) {
+        if (is_string($items)) {
+            $decoded = json_decode($items);
+        
+            if (!json_last_error()) {
+                return $decoded;
+            }
+        }
+        
+        if (is_iterable($items)) {
+            foreach ($items as &$argument) {
+                if (is_string($argument)) {
+                    $decoded = json_decode($argument);
+            
+                    if (!json_last_error()) {
+                        $argument = $decoded;
+                    }
                 }
             }
         }
         
-        return $arguments;
+        return $items;
     }
 }
 
 namespace Output
 {
-    function stream($output): string {
-        return json($output) ?? '';
+    use function Format\unquote;
+    
+    function stream(...$items): void {
+        foreach ($items as $item) {
+            echo unquote(json($item)).PHP_EOL;
+        }
     }
     
-    function json($output): ?string {
-        $input = json_encode($output, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: null;
-        
-        if ($input
-            && strpos($input, '"') === 0
-            && strrpos($input, '"') + 1 === strlen($input)) {
-            $input = substr($input, 1, -1);
-        }
-        
-        return $input;
+    function json($content): string {
+        return json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: 'null';
     }
     
     function panic(string $message, array $notes = [], ?\Exception $exception = null): void {
-        echo stream(sprintf($message, ...$notes)).PHP_EOL;
+        stream(sprintf($message, ...$notes)).PHP_EOL;
         
         if ($exception) {
-            echo stream((object) [
+            stream((object) [
                 'code' => $exception->getCode() ?: 503,
                 'message' => $exception->getMessage(),
                 'file' => $exception->getFile(),

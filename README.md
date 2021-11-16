@@ -8,7 +8,7 @@ A simple but powerful module loader written for PHP.
 
 ### Requirements
 
-- Docker: Required to use `./play` script (`app/console` will work with PHP 8.0).
+- Docker: Required to use `./play` script (`app/console` will work with PHP 7.4).
 
 ### Installation
 
@@ -17,10 +17,11 @@ git clone https://github.com/userdude/pure-expressive.git pure-expressive
 
 cd pure-expressive
 
-./play make/service say/hello  
+./play make/service say/hello
 ```
 
-Now you can edit the `app/say/hello.php` file and change the service `return`:
+Now you can edit the `app/say/hello.php` file and change the service's `return`
+statement at the end of the generated file:
 
 ```php
 <?php // app/say/hello.php
@@ -54,8 +55,8 @@ that easy. `:D`
 First, let's look at our files.
 
 - `play`: Calls a console service against the `app/console` php script.
-- `play-worker`: This command starts a worker session that `play` uses to run the service 
-   request. This provides a consistent PHP version (8.0 as of now).
+- `worker`: This command starts a worker session that `play` uses to run the service 
+   request. This provides a consistent PHP version (7.4 as of now).
 
 This basic, compat-level expressive only has one folder, and two more files:
 

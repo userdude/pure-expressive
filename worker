@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+source ./.env
+
+function check_running_worker {
+  WORKER_NAME="$1"
+
+  docker ps --format "table [[ {{.Names}} ]]" | grep "${WORKER_NAME}"
+}
+
+if [ "${CONTAINER_IMAGE}" == "" ]; then
+  CONTAINER_IMAGE="php:7.4-cli"
+fi
+
+if [ "${CONTAINER_NAME}" == "" ]; then
+  CONTAINER_NAME="$(basename "$(cd .. && pwd)")-$(basename "$(pwd)")"
+fi
+
+WORKER_NAME="${CONTAINER_NAME}-worker"
+
+HAS_RUNNING_WORKER="$(check_running_worker ${WORKER_NAME})"
+
+if [ "$1" == "stop" ]; then
+  if [ "${HAS_RUNNING_WORKER}" != "" ]; then
+    docker kill "${WORKER_NAME}"
+  fi
+
+  exit
+fi
+
+if [ "$1" == "restart" ] && [ "${HAS_RUNNING_WORKER}" != "" ]; then
+  docker kill "${WORKER_NAME}"
+fi
+
+HAS_RUNNING_WORKER="$(check_running_worker ${WORKER_NAME})"
+
+if [ "${HAS_RUNNING_WORKER}" == "" ]; then
+  docker rm "${WORKER_NAME}"
+
+  WORKER_PATH=$(docker run "${CONTAINER_IMAGE}" bash -c 'echo "${PATH}"')
+
+  docker run \
+         -d -i \
+         --name "${WORKER_NAME}" \
+         -v "${PWD}/app:/app" \
+         --env-file ./app/.properties \
+         --env-file ./.env \
+         -e PATH="${WORKER_PATH}:/app" \
+         "${CONTAINER_IMAGE}" \
+         bash -c "while true; do sleep 1; done;"
+fi

@@ -5,46 +5,17 @@ declare(strict_types=1);
 namespace Service\Make;
 
 use function Format\pascal;
+use function Format\sausage;
 use function Format\sf;
 use function Format\template;
 use function Service\path;
 use function Service\ns;
 
 interface Service {
-    public const TEMPLATE = '
-<?php
-
-declare(strict_types=1);
-
-namespace {{ namespace }};
-
-use App\Context;
-{{ use }}
-/** @var Context $context */
-{{ functions }}
-interface {{ interface }} {
-    // TODO: Synchronize service definition arguments with __invoke()
-    public function __invoke({{ arguments }});
-}
-{{ services }}
-return {{ definition }}
-';
-    
-    public const FULL_DEFINITION = '
-function() use(&$context) {
-    // TODO: Implement {{ name }} service
-    \Service\implement(\'{{ name }}\');
-};
-';
-    
-    public const SHORT_DEFINITION = '
-fn({{ arguments }}) => \Service\implement(\'{{ name }}\'); // TODO: Implement {{ name }} service
-';
-    
-    public function __invoke(string $name, bool $useFullDefinition = true): string;
+    public function __invoke(string $name): string;
 }
 
-return function(string $name, bool $useFullDefinition = true): string {
+return function(string $name): string {
     if (!file_exists($path = path($name))) {
         $directory = dirname($path);
         
@@ -52,19 +23,34 @@ return function(string $name, bool $useFullDefinition = true): string {
             mkdir($directory, 0777, true);
         }
         
-        $definition = trim($useFullDefinition ? Service::FULL_DEFINITION : Service::SHORT_DEFINITION);
-        
-        $rendered = template(Service::TEMPLATE, [
+        $rendered = template('
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use App\Context;
+
+/** @var Context $context */
+
+interface {{ interface }} {
+    /**
+     * @todo Add service description for {{ name }}.
+     *
+     * @todo Synchronize {{ name }} arguments with __invoke().
+     */
+    public function __invoke();
+}
+
+return function() use(&$context) {
+    \Service\implement(\'{{ name }}\');
+};
+',
+        [
             'namespace' => ns(sf('app/%s', $name), 1),
-            'use' => '',
-            'functions' => '',
             'interface' => pascal(basename($name)),
-            'arguments' => '',
-            'services' => '',
-            'definition' => template($definition, [
-                'arguments' => '',
-                'name' => $name,
-            ]),
+            'name' => sausage($name),
         ]);
         
         if (file_put_contents($path, trim($rendered).PHP_EOL)) {

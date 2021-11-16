@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 
+source ./.env
+
 # Suppress output
-OUT="$(./play-worker)"
+BLACKHOLE="$(./worker)"
 
-CONTAINER_PREFIX="$(basename "$(cd .. && pwd)")-$(basename "$(pwd)")"
-EXPRESS_WORKER_NAME="${CONTAINER_PREFIX}_play-worker"
+if [ "${CONTAINER_NAME}" == "" ]; then
+  CONTAINER_NAME="$(basename "$(cd .. && pwd)")-$(basename "$(pwd)")"
+fi
 
-docker exec -it "${EXPRESS_WORKER_NAME}" console "$@"
+WORKER_NAME="${CONTAINER_NAME}-worker"
 
-echo ""
+docker exec -it "${WORKER_NAME}" console "$@"
