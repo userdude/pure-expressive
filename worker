@@ -43,7 +43,6 @@ if [ "${HAS_RUNNING_WORKER}" == "" ]; then
          -d -i \
          --name "${WORKER_NAME}" \
          -v "${PWD}/app:/app" \
-         --env-file ./app/.properties \
          --env-file ./.env \
          -e PATH="${WORKER_PATH}:/app" \
          "${CONTAINER_IMAGE}" \
