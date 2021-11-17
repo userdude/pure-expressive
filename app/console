@@ -70,10 +70,6 @@ namespace App
     use function Output\panic;
     use function Service\path;
     
-    function property(string $name, $default = null) {
-        return array_key_exists($name, $_ENV) ? infer(unquote($_ENV[$name] ?? '')) : $default;
-    }
-    
     function module(Context $context, string $name): callable {
         if (file_exists($path = path($name))) {
             return require $path;
@@ -82,20 +78,13 @@ namespace App
         panic('Module %s not found at %s!', [$name, $path]);
     }
     
-    interface Migration
-    {
-        public function version(): int;
-    
-        public function forward();
-        
-        public function backward();
-    }
-    
     abstract class Context
     {
+        private array $services = [];
+        
         public function service(string $name): callable
         {
-            return module($this, $name);
+            return $this->services[$name] = $this->services[$name] ?? module($this, $name);
         }
         
         public function compute(string $delegate, ...$arguments)
