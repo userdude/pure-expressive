@@ -12,7 +12,6 @@ namespace
     use function Output\json;
     use function Output\panic;
     use function Output\stream;
-    use function Service\path;
     
     defined('APP_PATH') ?: define('APP_PATH', dirname(__FILE__));
     
@@ -63,10 +62,6 @@ namespace
 
 namespace App
 {
-    use function Format\sf;
-    use function Format\template;
-    use function Format\unquote;
-    use function Input\infer;
     use function Output\panic;
     use function Service\path;
     
@@ -106,21 +101,21 @@ namespace Service
     use function Format\sf;
     
     function path(string $name): string {
-        return sf('%s/%s.php', APP_PATH, format('format\sausage', $name));
+        return sf('%s/%s.php', APP_PATH, links('sausage', $name));
     }
     
     function name(string $path): string {
-        return trim(format('format\sausage', str_replace([APP_PATH, '.php'], '', $path)), '/');
+        return trim(links('sausage', str_replace([APP_PATH, '.php'], '', $path)), '/');
     }
     
     function ns(string $path, int $offset = 0): string {
         return trim(str_replace('/', '\\',
-            dirname(format('format\pascal', $path), $offset)
+            dirname(links('pascal', $path), $offset)
         ), '\\');
     }
     
-    function format(string $method, string $path): string {
-        return implode('/', array_map(fn($part) => $method($part), explode('/', $path)));
+    function links(string $method, string $path): string {
+        return implode('/', array_map(fn($part) => ('Format\\'.$method)($part), explode('/', $path)));
     }
     
     function implement(string $name): void {
@@ -146,7 +141,7 @@ namespace Format
         return $subject ? sf('%s%s%s', $wrap, $subject, $wrap) : '';
     }
     
-    function template(string $body, array $properties): string {
+    function template(array $properties, string $body): string {
         return str_replace(
             array_map(fn(string $var): string => sf('{{ %s }}', $var), array_keys($properties)),
             array_values($properties),
@@ -179,8 +174,6 @@ namespace Format
 
 namespace Input
 {
-    use function Output\json;
-    
     /**
      * Give possible JSON-formatted string and attempt to decode.
      *

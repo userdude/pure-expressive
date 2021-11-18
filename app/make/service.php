@@ -23,7 +23,11 @@ return function(string $name): string {
             mkdir($directory, 0777, true);
         }
         
-        $rendered = template('
+        $rendered = template([
+            'namespace' => ns(sf('app/%s', $name), 1),
+            'interface' => pascal(basename($name)),
+            'name' => sausage($name),
+        ], '
 <?php
 
 declare(strict_types=1);
@@ -46,12 +50,7 @@ interface {{ interface }} {
 return function() use(&$context) {
     \Service\implement(\'{{ name }}\');
 };
-',
-        [
-            'namespace' => ns(sf('app/%s', $name), 1),
-            'interface' => pascal(basename($name)),
-            'name' => sausage($name),
-        ]);
+');
         
         if (file_put_contents($path, trim($rendered).PHP_EOL)) {
             return sf('Success! %s service file generated.', trim($path, '/'));
