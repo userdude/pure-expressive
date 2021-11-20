@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
-if [ -f "./.env" ]; then
-  source ./.env
+if [ ! -f "./.env" ]; then
+  cp ./.env.example ./.env
 fi
+
+source ./.env
 
 # Suppress output
 BLACKHOLE="$(./worker)"
