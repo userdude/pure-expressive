@@ -8,6 +8,8 @@ use function Format\pascal;
 use function Format\sausage;
 use function Format\sf;
 use function Format\template;
+use function Input\chomp;
+use function Service\links;
 use function Service\path;
 use function Service\ns;
 
@@ -15,7 +17,11 @@ interface Service {
     public function __invoke(string $name): string;
 }
 
-return function(string $name): string {
+$format = fn(?string $contents = null): string => $contents ? trim($contents) : '';
+$formatSingle = fn(?string $contents = null): string => $contents ? PHP_EOL.trim($contents) : '';
+$formatDouble = fn(?string $contents = null): string => $contents ? PHP_EOL.PHP_EOL.trim($contents) : '';
+
+return function(string $name, object $options = null) use($format, $formatSingle, $formatDouble): string {
     if (!file_exists($path = path($name))) {
         $directory = dirname($path);
         
@@ -23,33 +29,48 @@ return function(string $name): string {
             mkdir($directory, 0777, true);
         }
         
-        $rendered = template([
-            'namespace' => ns(sf('app/%s', $name), 1),
-            'interface' => pascal(basename($name)),
-            'name' => sausage($name),
-        ], '
+        $config = [
+            'uses' => $formatSingle,
+            'functions' => $formatDouble,
+            'heading' => $formatDouble,
+            'description' => fn(?string $contents = null) => $contents
+                ? $contents
+                : '@todo Add service description for {{ name }}.',
+            '@params' => $formatDouble,
+            '@returns' => $formatDouble,
+            'services' => $formatDouble,
+            'service' => fn(?string $content = null) => trim($content ?? '
+function({{ arguments }}) use({{ imports }}){{ response }} {
+    \Service\implement(\'{{ name }}\');
+};
+'),
+            'arguments' => $format,
+            'response' => $format,
+            // Do not change below
+            'namespace' => fn() => ns(sf('app/%s', $name), 1),
+            'interface' => fn() => pascal(basename($name)),
+            'name' => fn() => links('sausage', $name),
+        ];
+        
+        $rendered = template(chomp((array) $options ?? [], $config, true), '
 <?php
 
 declare(strict_types=1);
 
 namespace {{ namespace }};
 
-use App\Context;
+use App\Context;{{ uses }}{{ functions }}
 
-/** @var Context $context */
+/** @var Context $context */{{ heading }}
 
 interface {{ interface }} {
     /**
-     * @todo Add service description for {{ name }}.
-     *
-     * @todo Synchronize {{ name }} arguments with __invoke().
+     * {{ description }}{{ @params }}{{ @returns }}
      */
-    public function __invoke();
-}
+    public function __invoke({{ arguments }}){{ response }};
+}{{ services }}
 
-return function() use(&$context) {
-    \Service\implement(\'{{ name }}\');
-};
+return {{ service }}
 ');
         
         if (file_put_contents($path, trim($rendered).PHP_EOL)) {

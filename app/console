@@ -13,6 +13,22 @@ namespace
     use function Output\panic;
     use function Output\stream;
     
+    function dump(...$items): void {
+        stream(...$items).PHP_EOL;
+    }
+    
+    function debug(...$items) {
+        dump(...$items);
+        
+        return array_slice($items, -1)[0] ?? null;
+    }
+    
+    function dd(...$items): void {
+        dump(...$items);
+        
+        exit;
+    }
+    
     defined('APP_PATH') ?: define('APP_PATH', dirname(__FILE__));
     
     (fn(string $service, ...$request) => (new class($service) extends Context {
@@ -34,30 +50,6 @@ namespace
             exit;
         }
     })->respond(...$request))($argv[1], ...array_slice($argv, 2));
-    
-    function export(...$items): void {
-        echo var_export($items, true).PHP_EOL;
-    }
-    
-    function lump(string $name, ...$items): void {
-        echo sf('"%s": %s%s', $name, json($items), PHP_EOL);
-    }
-    
-    function debug(...$items) {
-        dump(...$items);
-        
-        return array_slice($items, -1)[0] ?? [];
-    }
-    
-    function dump(...$items): void {
-        stream(...$items).PHP_EOL;
-    }
-    
-    function dd(...$items): void {
-        dump(...$items);
-        
-        exit;
-    }
 }
 
 namespace App
@@ -75,11 +67,11 @@ namespace App
     
     abstract class Context
     {
-        private array $services = [];
+        private array $modules = [];
         
         public function service(string $name): callable
         {
-            return $this->services[$name] = $this->services[$name] ?? module($this, $name);
+            return $this->modules[$name] = $this->modules[$name] ?? module($this, $name);
         }
         
         public function compute(string $delegate, ...$arguments)
@@ -202,6 +194,61 @@ namespace Input
         }
         
         return $items;
+    }
+    
+    function chew(iterable $sources, $definitions, bool $strict = false): array {
+        $mapped = [];
+        
+        foreach ($sources as $source) {
+            $mapped[] = chomp($source, $definitions, $strict);
+        }
+        
+        return $mapped;
+    }
+    
+    function chomp(array $source, array $definitions, bool $strict = false): array {
+        $callbacks = [];
+        $bite = [];
+        
+        foreach ($definitions as $key => $definition) {
+            switch (true)
+            {
+                case is_callable($definition) && is_object($definition):
+                    $callbacks[] = [$key, $definition];
+                    
+                    break;
+                case is_int($key) && is_string($definition):
+                    if ($strict || $source[$definition]) {
+                        $bite[$definition] = $source[$definition] ?? null;
+                    }
+                    
+                    break;
+                case is_array($definition):
+                    foreach ($definition as $defKey => $value) {
+                        $sourceKey = is_int($defKey) ? $key : $defKey;
+                        
+                        break;
+                    }
+                    
+                    if (is_array($source[$sourceKey] ?? null) && $source[$sourceKey][0] ?? false) {
+                        $bite[$key] = chew($source[$sourceKey], $definition[$sourceKey], $strict);
+                    } else {
+                        $bite[$key] = array_values(chomp($source, $definition, $strict))[0];
+                    }
+                    
+                    break;
+                default:
+                    if ($strict || $source[$definition]) {
+                        $bite[$key] = $source[$definition] ?? null;
+                    }
+            }
+        }
+        
+        foreach ($callbacks as [$key, $definition]) {
+            $bite[$key] = $definition($source[$key] ?? null, $source);
+        }
+        
+        return $bite;
     }
 }
 
