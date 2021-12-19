@@ -49,7 +49,7 @@ function({{ arguments }}) use({{ imports }}){{ response }} {
             'imports' => fn() => '&$context',
         ];
         
-        $config += [ // Guarantee these are set.
+        $config += [ // Guarantee these are set last.
             'namespace' => fn() => ns(sf('app/%s', $name), 1),
             'interface' => fn() => pascal(basename($name)),
             'name' => fn() => links('sausage', $name),
