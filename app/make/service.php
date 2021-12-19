@@ -31,9 +31,9 @@ return function(string $name, object $options = null) use($format, $formatSingle
         
         $config = [
             'uses' => $formatSingle,
-            'functions' => $formatDouble,
+            'uses_functions' => $formatDouble,
             'heading' => $formatDouble,
-            'description' => fn(?string $contents = null) => $contents
+            '@description' => fn(?string $contents = null) => $contents
                 ? $contents
                 : '@todo Add service description for {{ name }}.',
             '@params' => $formatDouble,
@@ -46,6 +46,7 @@ function({{ arguments }}) use({{ imports }}){{ response }} {
 '),
             'arguments' => $format,
             'response' => $format,
+            'imports' => fn() => '&$context',
             // Do not change below
             'namespace' => fn() => ns(sf('app/%s', $name), 1),
             'interface' => fn() => pascal(basename($name)),
@@ -59,13 +60,13 @@ declare(strict_types=1);
 
 namespace {{ namespace }};
 
-use App\Context;{{ uses }}{{ functions }}
+use App\Context;{{ uses }}{{ uses_functions }}
 
 /** @var Context $context */{{ heading }}
 
 interface {{ interface }} {
     /**
-     * {{ description }}{{ @params }}{{ @returns }}
+     * {{ @description }}{{ @params }}{{ @returns }}
      */
     public function __invoke({{ arguments }}){{ response }};
 }{{ services }}
