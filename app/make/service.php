@@ -47,7 +47,9 @@ function({{ arguments }}) use({{ imports }}){{ response }} {
             'arguments' => $format,
             'response' => $format,
             'imports' => fn() => '&$context',
-            // Do not change below
+        ];
+        
+        $config += [ // Guarantee these are set.
             'namespace' => fn() => ns(sf('app/%s', $name), 1),
             'interface' => fn() => pascal(basename($name)),
             'name' => fn() => links('sausage', $name),
